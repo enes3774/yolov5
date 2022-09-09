@@ -51,6 +51,7 @@ from utils.augmentations import (Albumentations, augment_hsv, classify_albumenta
 def run(
         im0s,
         model,
+    device,
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
@@ -79,7 +80,7 @@ def run(
         vid_stride=1,  # video frame-rate stride
 ):
     # Load model
-    device = select_device(device)
+    
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
