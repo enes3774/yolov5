@@ -152,6 +152,7 @@ def run(
                                 min_xyxy=xyxy
                                 min_dist=dist
                                 min_conf=float(conf)
+                                break
                         #c = int(cls)  # integer class
                         #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
             else:
