@@ -160,9 +160,9 @@ def run(
                         #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
             else:
                 return None
-            if min_dist==None and best_conf<0.5:
+            if min_dist==None and best_conf<0.7:
                 return None
-            if min_dist==None and best_conf>=0.5:
+            if min_dist==None and best_conf>=0.7:
                 return best_xyxy,best_conf
             if (best_conf==min_conf):
                 return min_xyxy,min_conf
