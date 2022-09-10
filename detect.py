@@ -132,7 +132,7 @@ def run(
             if len(det):
               
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
-                for *xyxy, conf, cls in reversed(det):
+                for *xyxy, conf, cls in det:
 
                     
                         c = int(cls)  # integer class
