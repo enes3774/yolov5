@@ -51,6 +51,7 @@ from utils.augmentations import (Albumentations, augment_hsv, classify_albumenta
 def run(
         im0s,
         model,
+        lim=20,
         coord=None,
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
@@ -149,7 +150,7 @@ def run(
                         if coord!=None:
                             dist=math.sqrt((x0-x0n)**2+(y0-y0n)**2)
                             print(dist)
-                            if dist>20:
+                            if dist>lim:
                                 continue
                             else:
                                 min_xyxy=xyxy
@@ -159,8 +160,10 @@ def run(
                         #c = int(cls)  # integer class
                         #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
             else:
+                print("hiç algılanmadı")
                 return None
             if min_dist==None and best_conf<0.7:
+                print("en yakın yok best de 0.7 altı")
                 return None
             if min_dist==None and best_conf>=0.7:
                 return best_xyxy,best_conf
