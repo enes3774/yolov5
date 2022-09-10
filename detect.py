@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 import numpy as np
 import torch
-
+import math
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -51,13 +51,14 @@ from utils.augmentations import (Albumentations, augment_hsv, classify_albumenta
 def run(
         im0s,
         model,
-    device,
+        coord=None,
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=True,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
@@ -79,7 +80,9 @@ def run(
         vid_stride=1,  # video frame-rate stride
 ):
     # Load model
-    
+    if coord!=None:
+        x0,y0=coord
+    device = select_device(device)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
@@ -92,6 +95,7 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    
     for _ in range(1):
         
       
@@ -109,10 +113,11 @@ def run(
         with dt[1]:
             visualize =  False
             pred = model(im, augment=augment, visualize=visualize)
-
+        
+        print(len(pred))
         # NMS
         with dt[2]:
-            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+            pred = non_max_suppression(pred, 0, iou_thres, classes, agnostic_nms, max_det=max_det)
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
@@ -132,13 +137,37 @@ def run(
             if len(det):
               
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
+                min_dist=None
+                best_xyxy,best_conf=det[0][0:4],float(det[0][4])
                 for *xyxy, conf, cls in det:
 
-                    
-                        c = int(cls)  # integer class
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        return xyxy,label
-                        
+                        x0n,y0n,x1n,y1n=xyxy
+                        if coord!=None:
+                            dist=math.sqrt((x0-x0n)**2+(y0-y0n)**2)
+                            if dist>20:
+                                continue
+                            else:
+                                min_xyxy=xyxy
+                                min_dist=dist
+                                min_conf=float(conf)
+                        #c = int(cls)  # integer class
+                        #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+            else:
+                return None
+            
+            if min_dist==None and best_conf<0.5:
+                return None
+            if min_dist==None and best_conf>=0.5:
+                return best_xyxy,best_conf
+
+            if (best_conf==min_conf):
+                return min_xyxy,min_conf
+            x0b,y0b,x1b,y1b=best_xyxy
+            dist=math.sqrt((x0-int(x0b))**2+(y0-int(y0b))**2)
+            if min_conf>(best_conf-dist*0.0005):
+                return min_xyxy,min_conf
+            else:
+                return best_xyxy,best_conf
          
                         
 
