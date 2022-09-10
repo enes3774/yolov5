@@ -139,6 +139,8 @@ def run(
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
                 min_dist=None
                 best_xyxy,best_conf=det[0][0:4],float(det[0][4])
+                if coord==None:
+                    return best_xyxy,best_conf
                 for *xyxy, conf, cls in det:
 
                         x0n,y0n,x1n,y1n=xyxy
@@ -154,17 +156,21 @@ def run(
                         #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
             else:
                 return None
-            
+            if min_conf>0.75:
+                return min_xyxy,min_conf
+            if best_conf>0.75:
+                return best_xyxy,best_conf
             if min_dist==None and best_conf<0.5:
                 return None
             if min_dist==None and best_conf>=0.5:
                 return best_xyxy,best_conf
-
+            if best_conf<0.25 and min_conf<0.25:
+                return None
             if (best_conf==min_conf):
                 return min_xyxy,min_conf
             x0b,y0b,x1b,y1b=best_xyxy
             dist=math.sqrt((x0-int(x0b))**2+(y0-int(y0b))**2)
-            if min_conf>(best_conf-dist*0.0005):
+            if min_conf>(best_conf-dist*0.002):
                 return min_xyxy,min_conf
             else:
                 return best_xyxy,best_conf
