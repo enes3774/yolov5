@@ -169,9 +169,9 @@ def run(
                 return best_xyxy,best_conf
             if (best_conf==min_conf):
                 return min_xyxy,min_conf
-            if min_conf>0.75:
+            if min_conf>0.78:
                 return min_xyxy,min_conf
-            if best_conf>0.75:
+            if best_conf>0.78:
                 return best_xyxy,best_conf
             
             if best_conf<0.25:
