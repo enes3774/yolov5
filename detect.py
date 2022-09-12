@@ -52,7 +52,6 @@ def run(
         im0s,
         model,
         lim=20,
-        coord=None,
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
@@ -81,8 +80,7 @@ def run(
         vid_stride=1,  # video frame-rate stride
 ):
     # Load model
-    if coord!=None:
-        x0,y0=coord
+   
     device = select_device(device)
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
@@ -115,10 +113,9 @@ def run(
             visualize =  False
             pred = model(im, augment=augment, visualize=visualize)
         
-        print(len(pred))
         # NMS
         with dt[2]:
-            pred = non_max_suppression(pred, 0.1, iou_thres, classes, agnostic_nms, max_det=max_det)
+            pred = non_max_suppression(pred, 0.25, iou_thres, classes, agnostic_nms, max_det=max_det)
 
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
@@ -139,55 +136,11 @@ def run(
               
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
                 min_dist=None
-                best_xyxy,best_conf=det[0][0:4],float(det[0][4])
-                print("best:"+str(best_conf))
-                if coord==None:
-                    return best_xyxy,best_conf
-                
-                for *xyxy, conf, cls in det:
+                xyxy,conf=det[0][0:4],float(det[0][4])
 
-                        x0n,y0n,x1n,y1n=xyxy
-                        if coord!=None:
-                            dist=math.sqrt((x0-x0n)**2+(y0-y0n)**2)
-                            print(dist)
-                            if dist>lim:
-                                continue
-                            else:
-                                min_xyxy=xyxy
-                                min_dist=dist
-                                min_conf=float(conf)
-                                break
-                        #c = int(cls)  # integer class
-                        #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                return xyxy,conf
             else:
-                print("hiç algılanmadı")
                 return None
-            if min_dist==None and best_conf<0.7:
-                print("en yakın yok best de 0.7 altı")
-                return None
-            if min_dist==None and best_conf>=0.7:
-                return best_xyxy,best_conf
-            if (best_conf==min_conf):
-                return min_xyxy,min_conf
-            if min_conf>0.78:
-                return min_xyxy,min_conf
-            if best_conf>0.78:
-                return best_xyxy,best_conf
-            
-            if best_conf<0.25:
-                if min_conf>0.1:
-                    return min_xyxy,min_conf
-                else:
-                    return None
-
-            x0b,y0b,x1b,y1b=best_xyxy
-            dist=math.sqrt((x0-int(x0b))**2+(y0-int(y0b))**2)
-            if min_conf>(best_conf-dist*0.002):
-                return min_xyxy,min_conf
-            else:
-                return best_xyxy,best_conf
-         
-                        
 
 def parse_opt():
     parser = argparse.ArgumentParser()
